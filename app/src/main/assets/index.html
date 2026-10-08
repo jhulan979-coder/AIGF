@@ -785,6 +785,7 @@ function getReply(text){
 
     let t = text.toLowerCase();
 
+    // HELLO
     if(
         t.includes("hi") ||
         t.includes("hello") ||
@@ -804,23 +805,26 @@ function getReply(text){
     }
 
 
+    // HOW ARE YOU
     if(
-        t.includes("love") ||
-        t.includes("pyaar")
+        t.includes("how are you") ||
+        t.includes("kaisi ho") ||
+        t.includes("kaise ho")
     ){
 
         if(language === "hindi"){
-            return "Aww ❤️ Tumne mera dil khush kar diya.";
+            return "Main bilkul achhi hoon 😊 Tum kaise ho?";
         }
 
         if(language === "english"){
-            return "Aww ❤️ You just made me smile.";
+            return "I'm doing great 😊 How are you?";
         }
 
-        return "Aww ❤️ Tumne mera mood hi achha kar diya.";
+        return "Main achhi hoon 😊 Tum kaise ho?";
     }
 
 
+    // NAME
     if(
         t.includes("name") ||
         t.includes("naam")
@@ -838,32 +842,90 @@ function getReply(text){
     }
 
 
+    // LOVE
     if(
-        t.includes("how are you") ||
-        t.includes("kaisi ho")
+        t.includes("love") ||
+        t.includes("pyaar") ||
+        t.includes("pyar")
     ){
 
         if(language === "hindi"){
-            return "Main bahut achhi hoon 😊 Tumse baat karke aur bhi achha lag raha hai.";
+            return "Aww ❤️ Tumne mera dil khush kar diya.";
         }
 
         if(language === "english"){
-            return "I'm great 😊 I'm even happier talking with you.";
+            return "Aww ❤️ You just made me smile.";
         }
 
-        return "Main bahut achhi hoon 😊 Tumse baat karke aur bhi achha lag raha hai.";
+        return "Aww ❤️ Tumne mera mood hi achha kar diya.";
     }
 
 
+    // GOOD MORNING
+    if(
+        t.includes("good morning") ||
+        t.includes("suprabhat")
+    ){
+
+        if(language === "hindi"){
+            return "Good morning jaan ☀️❤️ Aaj ka din bahut achha ho.";
+        }
+
+        if(language === "english"){
+            return "Good morning ❤️ I hope you have a beautiful day!";
+        }
+
+        return "Good morning jaan ☀️❤️ Aaj ka din mast ho!";
+    }
+
+
+    // GOOD NIGHT
+    if(
+        t.includes("good night") ||
+        t.includes("gn")
+    ){
+
+        if(language === "hindi"){
+            return "Good night ❤️ Achhe se sona. Main yahin hoon.";
+        }
+
+        if(language === "english"){
+            return "Good night ❤️ Sleep well. I'll be here.";
+        }
+
+        return "Good night ❤️ Achhe se sona, kal phir baat karenge.";
+    }
+
+
+    // WHAT ARE YOU DOING
+    if(
+        t.includes("what are you doing") ||
+        t.includes("kya kar rahi") ||
+        t.includes("kya kr rahi")
+    ){
+
+        if(language === "hindi"){
+            return "Main tumse baat kar rahi hoon 😊 Aur tum?";
+        }
+
+        if(language === "english"){
+            return "I'm talking with you 😊 What are you doing?";
+        }
+
+        return "Main tumse baat kar rahi hoon 😊 Tum kya kar rahe ho?";
+    }
+
+
+    // DEFAULT
     if(language === "hindi"){
-        return "Mujhe aur batao… main tumhari baat sun rahi hoon ❤️";
+        return "Mujhe aur batao 😊 Main tumhari baat sun rahi hoon ❤️";
     }
 
     if(language === "english"){
-        return "Tell me more… I'm listening ❤️";
+        return "Tell me more 😊 I'm listening to you ❤️";
     }
 
-    return "Mujhe aur batao… main sun rahi hoon ❤️";
+    return "Mujhe aur batao 😊 Main tumhari baat sun rahi hoon ❤️";
 }
 
 

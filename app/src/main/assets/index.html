@@ -31,7 +31,17 @@ body{
     background:linear-gradient(#10111b,#07080d);
 }
 
-header{
+header{<button
+onclick="languageMenu()"
+style="
+background:#191a25;
+border:1px solid #303141;
+color:white;
+border-radius:20px;
+padding:8px 10px;
+">
+🌐
+</button>
     padding:24px 20px 12px;
     display:flex;
     justify-content:space-between;
@@ -496,6 +506,18 @@ onclick="openScreen('home')"
 ● Online
 </span>
 
+<button
+onclick="languageMenu()"
+style="
+background:#191a25;
+border:1px solid #303141;
+color:white;
+border-radius:20px;
+padding:8px 10px;
+font-size:16px;
+">
+🌐
+</button>
 </div>
 
 </div>
@@ -625,7 +647,56 @@ onclick="openScreen('home')"
 </div>
 
 
-<script>
+<script>let language = localStorage.getItem("language") || "hinglish";
+
+function setLanguage(lang){
+    language = lang;
+    localStorage.setItem("language", lang);
+    updateLanguage();
+}
+
+function updateLanguage(){
+
+    const title = document.querySelector(".logo");
+    if(title) title.innerHTML = "AI<span class='pink'>♡</span>Companion";
+
+    const input = document.getElementById("message");
+
+    if(input){
+        if(language === "hindi"){
+            input.placeholder = "Apna message likho...";
+        }else if(language === "english"){
+            input.placeholder = "Type a message...";
+        }else{
+            input.placeholder = "Message likho...";
+        }
+    }
+}
+
+function languageMenu(){
+
+    const choice = prompt(
+        "Language choose karo:\n\n" +
+        "1 = Hindi 🇮🇳\n" +
+        "2 = Hinglish ❤️\n" +
+        "3 = English 🇬🇧"
+    );
+
+    if(choice === "1"){
+        setLanguage("hindi");
+        alert("Hindi language selected 🇮🇳");
+    }
+
+    if(choice === "2"){
+        setLanguage("hinglish");
+        alert("Hinglish selected ❤️");
+    }
+
+    if(choice === "3"){
+        setLanguage("english");
+        alert("English selected 🇬🇧");
+    }
+}
 
 
 function openScreen(id){

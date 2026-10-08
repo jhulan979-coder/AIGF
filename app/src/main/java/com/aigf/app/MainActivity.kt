@@ -22,7 +22,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var textToSpeech: TextToSpeech
 
     // APNI GEMINI API KEY YAHAN PASTE KARO
-    private val GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE
+    private val GEMINI_API_KEY = ""
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {

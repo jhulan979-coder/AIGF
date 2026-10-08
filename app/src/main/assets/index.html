@@ -783,18 +783,24 @@ function escapeText(text){
 
 function getReply(text){
 
-    let t =
-    text.toLowerCase();
-
+    let t = text.toLowerCase();
 
     if(
         t.includes("hi") ||
         t.includes("hello") ||
-        t.includes("hey")
+        t.includes("hey") ||
+        t.includes("hii")
     ){
 
-        return "Hii 😊 I was waiting for you!";
+        if(language === "hindi"){
+            return "Hii 😊 Main tumhara wait kar rahi thi!";
+        }
 
+        if(language === "english"){
+            return "Hi 😊 I was waiting for you!";
+        }
+
+        return "Hii 😊 Main tumhara wait kar rahi thi!";
     }
 
 
@@ -803,8 +809,15 @@ function getReply(text){
         t.includes("pyaar")
     ){
 
-        return "Aww ❤️ You just made me smile.";
+        if(language === "hindi"){
+            return "Aww ❤️ Tumne mera dil khush kar diya.";
+        }
 
+        if(language === "english"){
+            return "Aww ❤️ You just made me smile.";
+        }
+
+        return "Aww ❤️ Tumne mera mood hi achha kar diya.";
     }
 
 
@@ -813,8 +826,15 @@ function getReply(text){
         t.includes("naam")
     ){
 
-        return "I'm Aanya, your AI companion ✨";
+        if(language === "hindi"){
+            return "Mera naam Aanya hai ✨ Main tumhari AI companion hoon.";
+        }
 
+        if(language === "english"){
+            return "My name is Aanya ✨ I'm your AI companion.";
+        }
+
+        return "Mera naam Aanya hai ✨ Main tumhari AI companion hoon.";
     }
 
 
@@ -823,36 +843,27 @@ function getReply(text){
         t.includes("kaisi ho")
     ){
 
-        return "I'm great now that we're talking. 😊";
+        if(language === "hindi"){
+            return "Main bahut achhi hoon 😊 Tumse baat karke aur bhi achha lag raha hai.";
+        }
 
+        if(language === "english"){
+            return "I'm great 😊 I'm even happier talking with you.";
+        }
+
+        return "Main bahut achhi hoon 😊 Tumse baat karke aur bhi achha lag raha hai.";
     }
 
 
-    return "Tell me more… I'm listening ❤️";
-
-}
-
-
-function voice(){
-
-    if(
-        "speechSynthesis"
-        in window
-    ){
-
-        let speech =
-        new SpeechSynthesisUtterance(
-            "Hey! I am Aanya. I am happy to talk with you."
-        );
-
-        speech.rate=.95;
-
-        speech.pitch=1.05;
-
-        speechSynthesis.speak(speech);
-
+    if(language === "hindi"){
+        return "Mujhe aur batao… main tumhari baat sun rahi hoon ❤️";
     }
 
+    if(language === "english"){
+        return "Tell me more… I'm listening ❤️";
+    }
+
+    return "Mujhe aur batao… main sun rahi hoon ❤️";
 }
 
 

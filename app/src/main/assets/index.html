@@ -938,11 +938,6 @@ function memory(){
 }
 function voice(){
 
-    if(!("speechSynthesis" in window)){
-        alert("Voice support available nahi hai.");
-        return;
-    }
-
     let text;
 
     if(language === "hindi"){
@@ -955,24 +950,12 @@ function voice(){
         text = "Hii 😊 Main Aanya hoon. Tumse baat karke mujhe bahut achha lagta hai.";
     }
 
-    let speech =
-        new SpeechSynthesisUtterance(text);
-
-    if(language === "hindi"){
-        speech.lang = "hi-IN";
-    }
-    else if(language === "english"){
-        speech.lang = "en-US";
+    if(window.AndroidVoice){
+        AndroidVoice.speak(text, language);
     }
     else{
-        speech.lang = "hi-IN";
+        alert("Android voice connect nahi hua.");
     }
-
-    speech.rate = 0.95;
-    speech.pitch = 1.05;
-
-    speechSynthesis.cancel();
-    speechSynthesis.speak(speech);
 }
 
 function personality(){

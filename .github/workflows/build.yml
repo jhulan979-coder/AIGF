@@ -26,7 +26,9 @@ jobs:
           gradle-version: '8.11'
 
       - name: Build APK
-        run: gradle assembleDebug
+        run: |
+          sed -i "s/versionCode = [0-9]*/versionCode = ${{ github.run_number }}/" app/build.gradle.kts
+          gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

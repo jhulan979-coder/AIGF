@@ -681,20 +681,19 @@ function languageMenu(){
         "Language choose karo:\n\n" +
         "1 = Hindi 🇮🇳\n" +
         "2 = Hinglish ❤️\n" +
-        "3 = English 🇬🇧"
+        "3 = English 🇬🇧\n\n" +
+        "Number type karke OK dabao."
     );
 
     if(choice === "1"){
         setLanguage("hindi");
-        alert("Hindi language selected 🇮🇳");
+        alert("Hindi selected 🇮🇳");
     }
-
-    if(choice === "2"){
+    else if(choice === "2"){
         setLanguage("hinglish");
         alert("Hinglish selected ❤️");
     }
-
-    if(choice === "3"){
+    else if(choice === "3"){
         setLanguage("english");
         alert("English selected 🇬🇧");
     }

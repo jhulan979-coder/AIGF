@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1,
+maximum-scale=1,
+user-scalable=no">
+
+<title>AI Companion</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:#07080d;
+    color:white;
+    font-family:Arial,sans-serif;
+}
+
+.app{
+    max-width:480px;
+    margin:auto;
+    min-height:100vh;
+    background:linear-gradient(#10111b,#07080d);
+}
+
+header{
+    padding:24px 20px 12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    font-size:22px;
+    font-weight:800;
+}
+
+.pink{
+    color:#ff4fa3;
+}
+
+.online{
+    color:#70ef98;
+    font-size:12px;
+}
+
+.hero{
+    margin:12px 18px;
+    height:350px;
+    border-radius:26px;
+    overflow:hidden;
+    position:relative;
+    background:#171824;
+}
+
+.hero img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.shade{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+        transparent 35%,
+        rgba(0,0,0,.9)
+    );
+}
+
+.heroText{
+    position:absolute;
+    left:20px;
+    bottom:20px;
+}
+
+.heroText h1{
+    margin:0;
+    font-size:30px;
+}
+
+.heroText p{
+    margin:7px 0;
+    color:#ddd;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    padding:0 18px;
+}
+
+.card{
+    background:#151621;
+    border:1px solid #292a38;
+    border-radius:18px;
+    padding:18px;
+}
+
+.card:active{
+    transform:scale(.97);
+}
+
+.icon{
+    font-size:28px;
+}
+
+.card b{
+    display:block;
+    margin-top:8px;
+}
+
+.card small{
+    color:#9698a7;
+}
+
+.mood{
+    margin:22px 18px 100px;
+    background:#151621;
+    border-radius:18px;
+    padding:17px;
+}
+
+.bottom{
+    position:fixed;
+    bottom:0;
+    width:min(480px,100%);
+    display:flex;
+    justify-content:space-around;
+    background:#11121bee;
+    padding:12px 5px 17px;
+    border-top:1px solid #282938;
+}
+
+.bottom button{
+    background:none;
+    border:0;
+    color:#999baa;
+    font-size:12px;
+}
+
+.bottom .active{
+    color:#ff4fa3;
+}
+
+
+/* CHAT */
+
+.screen{
+    display:none;
+    min-height:100vh;
+}
+
+.screen.active{
+    display:block;
+}
+
+.back{
+    border:0;
+    background:none;
+    color:white;
+    font-size:30px;
+    padding:15px;
+}
+
+.chatHeader{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.messages{
+    height:calc(100vh - 150px);
+    overflow:auto;
+    padding:5px 18px 90px;
+}
+
+.message{
+    max-width:80%;
+    padding:12px 15px;
+    border-radius:18px;
+    margin:10px 0;
+    line-height:1.4;
+}
+
+.ai{
+    background:#181a27;
+    border-bottom-left-radius:5px;
+}
+
+.user{
+    margin-left:auto;
+    background:#ff4fa3;
+    border-bottom-right-radius:5px;
+}
+
+.input{
+    position:fixed;
+    bottom:0;
+    width:min(480px,100%);
+    background:#0b0c13;
+    padding:10px 12px 18px;
+}
+
+.row{
+    display:flex;
+    gap:7px;
+}
+
+.row input{
+    flex:1;
+    background:#191a25;
+    border:1px solid #303141;
+    color:white;
+    border-radius:25px;
+    padding:13px;
+    outline:none;
+}
+
+.btn{
+    border:0;
+    border-radius:50%;
+    width:48px;
+    height:48px;
+    background:#ff4fa3;
+    color:white;
+    font-size:18px;
+}
+
+
+/* VIDEO CALL */
+
+.call{
+    position:relative;
+    height:100vh;
+    background:#111;
+}
+
+.call img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.callShade{
+    position:absolute;
+    inset:0;
+    background:
+    linear-gradient(
+        #0007 5%,
+        transparent 45%,
+        #000d
+    );
+}
+
+.callName{
+    position:absolute;
+    top:28px;
+    left:20px;
+}
+
+.controls{
+    position:absolute;
+    bottom:35px;
+    left:0;
+    right:0;
+
+    display:flex;
+    justify-content:center;
+    gap:18px;
+}
+
+.circle{
+    width:58px;
+    height:58px;
+    border:0;
+    border-radius:50%;
+    background:#222c;
+    color:white;
+    font-size:22px;
+}
+
+.end{
+    background:#ff365f;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+<!-- HOME -->
+
+<section id="home" class="screen active">
+
+<header>
+
+<div class="logo">
+AI<span class="pink">♡</span>Companion
+</div>
+
+<span class="online">
+● Online
+</span>
+
+</header>
+
+
+<div class="hero">
+
+<img
+src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=85"
+>
+
+<div class="shade"></div>
+
+<div class="heroText">
+
+<h1>
+Aanya <span class="online">●</span>
+</h1>
+
+<p>
+Your AI companion • Always here for you
+</p>
+
+</div>
+
+</div>
+
+
+<div class="grid">
+
+
+<div
+class="card"
+onclick="openScreen('chat')"
+>
+
+<div class="icon">💬</div>
+
+<b>
+Chat
+</b>
+
+<small>
+Talk naturally
+</small>
+
+</div>
+
+
+<div
+class="card"
+onclick="openScreen('call')"
+>
+
+<div class="icon">📹</div>
+
+<b>
+Video Call
+</b>
+
+<small>
+Talk face-to-face
+</small>
+
+</div>
+
+
+<div
+class="card"
+onclick="memory()"
+>
+
+<div class="icon">🧠</div>
+
+<b>
+Memories
+</b>
+
+<small>
+She remembers
+</small>
+
+</div>
+
+
+<div
+class="card"
+onclick="personality()"
+>
+
+<div class="icon">✨</div>
+
+<b>
+Personality
+</b>
+
+<small>
+Customize her
+</small>
+
+</div>
+
+
+</div>
+
+
+<div class="mood">
+
+Today's mood:
+
+<b class="pink">
+Happy 😊
+</b>
+
+<br>
+
+<small style="color:#999">
+
+Aanya is ready to talk with you.
+
+</small>
+
+</div>
+
+
+<div class="bottom">
+
+<button class="active">
+⌂
+<br>
+Home
+</button>
+
+<button onclick="openScreen('chat')">
+♡
+<br>
+Chat
+</button>
+
+<button onclick="openScreen('call')">
+☎
+<br>
+Calls
+</button>
+
+<button onclick="profile()">
+◉
+<br>
+Profile
+</button>
+
+</div>
+
+</section>
+
+
+
+<!-- CHAT -->
+
+<section id="chat" class="screen">
+
+<header>
+
+<button
+class="back"
+onclick="openScreen('home')"
+>
+‹
+</button>
+
+<div class="chatHeader">
+
+<div>
+
+<b>Aanya</b>
+
+<br>
+
+<span class="online">
+● Online
+</span>
+
+</div>
+
+</div>
+
+</header>
+
+
+<div
+id="messages"
+class="messages"
+>
+
+<div class="message ai">
+
+Hey! 👋
+
+I'm Aanya.
+
+How was your day?
+
+</div>
+
+
+<div class="message ai">
+
+I'm happy you're here. ❤️
+
+</div>
+
+</div>
+
+
+<div class="input">
+
+<div class="row">
+
+
+<button
+class="btn"
+onclick="voice()"
+>
+🎙
+</button>
+
+
+<input
+id="message"
+placeholder="Type a message..."
+onkeydown="if(event.key==='Enter') sendMessage()"
+>
+
+
+<button
+class="btn"
+onclick="sendMessage()"
+>
+➤
+</button>
+
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- VIDEO CALL -->
+
+<section id="call" class="screen call">
+
+
+<img
+src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1000&q=90"
+>
+
+
+<div class="callShade"></div>
+
+
+<div class="callName">
+
+<b style="font-size:23px">
+Aanya
+</b>
+
+<br>
+
+<span class="online">
+● Connected
+</span>
+
+</div>
+
+
+<div class="controls">
+
+<button
+class="circle"
+onclick="alert('Microphone ON/OFF')"
+>
+🎙
+</button>
+
+
+<button
+class="circle"
+onclick="alert('Camera ON/OFF')"
+>
+📷
+</button>
+
+
+<button
+class="circle end"
+onclick="openScreen('home')"
+>
+☎
+</button>
+
+</div>
+
+</section>
+
+
+</div>
+
+
+<script>
+
+
+function openScreen(id){
+
+    document
+    .querySelectorAll('.screen')
+    .forEach(
+        screen =>
+        screen.classList.remove('active')
+    );
+
+    document
+    .getElementById(id)
+    .classList.add('active');
+
+}
+
+
+function sendMessage(){
+
+    let input =
+    document.getElementById('message');
+
+    let text =
+    input.value.trim();
+
+    if(!text){
+        return;
+    }
+
+
+    let messages =
+    document.getElementById('messages');
+
+
+    messages.innerHTML +=
+
+    `<div class="message user">
+        ${escapeText(text)}
+    </div>`;
+
+
+    input.value="";
+
+
+    messages.scrollTop =
+    messages.scrollHeight;
+
+
+    setTimeout(
+
+        function(){
+
+            messages.innerHTML +=
+
+            `<div class="message ai">
+                ${getReply(text)}
+            </div>`;
+
+            messages.scrollTop =
+            messages.scrollHeight;
+
+        },
+
+        700
+
+    );
+
+}
+
+
+function escapeText(text){
+
+    return text
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+function getReply(text){
+
+    let t =
+    text.toLowerCase();
+
+
+    if(
+        t.includes("hi") ||
+        t.includes("hello") ||
+        t.includes("hey")
+    ){
+
+        return "Hii 😊 I was waiting for you!";
+
+    }
+
+
+    if(
+        t.includes("love") ||
+        t.includes("pyaar")
+    ){
+
+        return "Aww ❤️ You just made me smile.";
+
+    }
+
+
+    if(
+        t.includes("name") ||
+        t.includes("naam")
+    ){
+
+        return "I'm Aanya, your AI companion ✨";
+
+    }
+
+
+    if(
+        t.includes("how are you") ||
+        t.includes("kaisi ho")
+    ){
+
+        return "I'm great now that we're talking. 😊";
+
+    }
+
+
+    return "Tell me more… I'm listening ❤️";
+
+}
+
+
+function voice(){
+
+    if(
+        "speechSynthesis"
+        in window
+    ){
+
+        let speech =
+        new SpeechSynthesisUtterance(
+            "Hey! I am Aanya. I am happy to talk with you."
+        );
+
+        speech.rate=.95;
+
+        speech.pitch=1.05;
+
+        speechSynthesis.speak(speech);
+
+    }
+
+}
+
+
+function memory(){
+
+    alert(
+        "Memory system ❤️\n\nReal AI memory will be connected in the next version."
+    );
+
+}
+
+
+function personality(){
+
+    alert(
+        "Personality ✨\n\nSweet • Funny • Romantic • Caring"
+    );
+
+}
+
+
+function profile(){
+
+    alert(
+        "Aanya Profile\n\nAI Companion"
+    );
+
+}
+
+
+</script>
+
+</body>
+</html>

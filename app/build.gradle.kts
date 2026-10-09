@@ -15,6 +15,15 @@ compileOptions {
 kotlinOptions {
     jvmTarget = "17"
 }
+signingConfigs {
+        create("stable") {
+            storeFile = file(System.getenv("AIGF_KEYSTORE_PATH") ?: "")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = "aigf"
+            keyPassword = System.getenv("KEYSTORE_PASSWORD")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.aigf.app"
         minSdk = 24

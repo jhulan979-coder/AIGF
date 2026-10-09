@@ -844,16 +844,35 @@ function deleteApiKey() {
     }
 }
 
+
 function testConnection() {
     const status = document.getElementById('keyStatus');
+    const key = document.getElementById('apiKey').value.trim();
 
-    if (!document.getElementById('apiKey').value.trim()) {
-        status.textContent = "Pehle API key paste karke Save API Key dabao.";
+    if (!key) {
+        status.textContent = "Pehle API key paste karo.";
         return;
     }
 
-    status.textContent = "Connection test ke liye agla step abhi baaki hai.";
+    try {
+        const saved = AndroidSettings.saveKey(key);
+
+        if (!saved) {
+            status.textContent = "API key save nahi hui. Dobara try karo.";
+            return;
+        }
+
+        status.textContent = "Gemini se connection check ho raha hai...";
+
+        AndroidAI.askGemini(
+            "Reply with exactly: Aanya connection successful!",
+            "english"
+        );
+    } catch (e) {
+        status.textContent = "Connection start nahi hua. Naya APK zaroori ho sakta hai.";
+    }
 }
+
 
 function sendMessage() {
     const input = document.getElementById('message');

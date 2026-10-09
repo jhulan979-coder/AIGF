@@ -6,23 +6,23 @@ workflow_dispatch:
 jobs:
 create-key:
 runs-on: ubuntu-latest
-
 steps:
-  - name: Generate Key
-    run: |
-      keytool -genkeypair \
-        -keystore aigf-signing.jks \
-        -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-        -keypass "${{ secrets.KEYSTORE_PASSWORD }}" \
-        -alias aigf \
-        -keyalg RSA \
-        -keysize 2048 \
-        -validity 10000 \
-        -dname "CN=AIGF, OU=Personal, O=AIGF, L=India, S=India, C=IN"
+- name: Generate Key
+env:
+KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+run: |
+keytool -genkeypair 
+-keystore aigf-signing.jks 
+-storepass "$KEYSTORE_PASSWORD" 
+-keypass "$KEYSTORE_PASSWORD" 
+-alias aigf 
+-keyalg RSA 
+-keysize 2048 
+-validity 10000 
+-dname "CN=AIGF, OU=Personal, O=AIGF, L=India, S=India, C=IN"
 
   - name: Encode Key
-    run: |
-      base64 -w 0 aigf-signing.jks > aigf-key.txt
+    run: base64 -w 0 aigf-signing.jks > aigf-key.txt
 
   - name: Upload Key
     uses: actions/upload-artifact@v4

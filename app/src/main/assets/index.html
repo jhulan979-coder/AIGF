@@ -777,280 +777,161 @@ function languageMenu(){
 }
 
 
-function openScreen(id){
 
-    document
-    .querySelectorAll('.screen')
-    .forEach(
-        screen =>
+
+function openScreen(id) {
+    document.querySelectorAll('.screen').forEach(screen =>
         screen.classList.remove('active')
     );
+    document.getElementById(id).classList.add('active');
 
-    document
-    .getElementById(id)
-    .classList.add('active');
-
+    if (id === 'settings') {
+        loadSavedKey();
+    }
 }
 
+function escapeText(text) {
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
-function sendMessage(){
+function loadSavedKey() {
+    const field = document.getElementById('apiKey');
+    const status = document.getElementById('keyStatus');
 
-    let input =
-    document.getElementById('message');
+    try {
+        const key = AndroidSettings.getKey();
+        field.value = key || "";
+        status.textContent = key ? "API key phone par saved hai." : "Abhi koi API key saved nahi hai.";
+    } catch (e) {
+        status.textContent = "Settings bridge nahi mila. Naya APK build karke install karo.";
+    }
+}
 
-    let text =
-    input.value.trim();
+function saveApiKey() {
+    const key = document.getElementById('apiKey').value.trim();
+    const status = document.getElementById('keyStatus');
 
-    if(!text){
+    if (!key) {
+        status.textContent = "Pehle API key paste karo.";
         return;
     }
 
+    try {
+        const saved = AndroidSettings.saveKey(key);
+        status.textContent = saved ? "API key phone par save ho gayi ❤️" : "Key save nahi hui. Dobara try karo.";
+    } catch (e) {
+        status.textContent = "Native settings available nahi hain. Naya APK install karna hoga.";
+    }
+}
 
-    let messages =
-    document.getElementById('messages');
+function toggleKeyVisibility() {
+    const field = document.getElementById('apiKey');
+    field.type = field.type === 'password' ? 'text' : 'password';
+}
 
+function deleteApiKey() {
+    try {
+        AndroidSettings.deleteKey();
+        document.getElementById('apiKey').value = "";
+        document.getElementById('keyStatus').textContent = "Saved API key delete kar di gayi.";
+    } catch (e) {
+        document.getElementById('keyStatus').textContent = "Key delete nahi hui.";
+    }
+}
 
-    messages.innerHTML +=
+function testConnection() {
+    const status = document.getElementById('keyStatus');
 
-    `<div class="message user">
-        ${escapeText(text)}
-    </div>`;
+    if (!document.getElementById('apiKey').value.trim()) {
+        status.textContent = "Pehle API key paste karke Save API Key dabao.";
+        return;
+    }
 
+    status.textContent = "Connection test ke liye agla step abhi baaki hai.";
+}
 
-    input.value="";
+function sendMessage() {
+    const input = document.getElementById('message');
+    const text = input.value.trim();
+    if (!text) return;
 
+    addMessage(text, 'user');
+    input.value = '';
 
-    messages.scrollTop =
-    messages.scrollHeight;
+    if (!window.AndroidAI) {
+        addMessage("AI connection ke liye naya APK install karna hoga.", 'ai');
+        return;
+    }
 
+    addMessage("Aanya soch rahi hai... ❤️", 'ai');
+    window.waitingForReply = true;
 
-    setTimeout(
+    const lang = localStorage.getItem('aanyaLanguage') || 'hinglish';
+    AndroidAI.askGemini(text, lang);
+}
 
-        function(){
+function addMessage(text, type) {
+    const messages = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'message ' + type;
+    div.textContent = text;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+}
 
-            messages.innerHTML +=
+window.receiveGeminiReply = function(reply) {
+    const messages = document.getElementById('messages');
 
-            `<div class="message ai">
-                ${getReply(text)}
-            </div>`;
+    if (window.waitingForReply) {
+        const last = messages.lastElementChild;
+        if (last && last.classList.contains('ai') &&
+            last.textContent === "Aanya soch rahi hai... ❤️") {
+            last.remove();
+        }
+    }
 
-            messages.scrollTop =
-            messages.scrollHeight;
+    window.waitingForReply = false;
+    addMessage(reply, 'ai');
 
-        },
+    try {
+        if (window.AndroidVoice) {
+            const lang = localStorage.getItem('aanyaLanguage') || 'hinglish';
+            AndroidVoice.speak(reply, lang === 'english' ? 'english' : 'hindi');
+        }
+    } catch (e) {}
+};
 
-        700
+function voice() {
+    if (!('speechSynthesis' in window)) {
+        addMessage("Voice input abhi available nahi hai.", 'ai');
+        return;
+    }
 
+    const speech = new SpeechSynthesisUtterance(
+        "Hey! I am Aanya. You can type your message below."
     );
-
+    speech.rate = 0.95;
+    speech.pitch = 1.05;
+    speechSynthesis.speak(speech);
 }
 
-
-function escapeText(text){
-
-    return text
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-
+function memory() {
+    alert("Memories feature abhi development mein hai ❤️");
 }
 
-
-function getReply(text){
-
-    let t = text.toLowerCase();
-
-    // HELLO
-    if(
-        t.includes("hi") ||
-        t.includes("hello") ||
-        t.includes("hey") ||
-        t.includes("hii")
-    ){
-
-        if(language === "hindi"){
-            return "Hii 😊 Main tumhara wait kar rahi thi!";
-        }
-
-        if(language === "english"){
-            return "Hi 😊 I was waiting for you!";
-        }
-
-        return "Hii 😊 Main tumhara wait kar rahi thi!";
-    }
-
-
-    // HOW ARE YOU
-    if(
-        t.includes("how are you") ||
-        t.includes("kaisi ho") ||
-        t.includes("kaise ho")
-    ){
-
-        if(language === "hindi"){
-            return "Main bilkul achhi hoon 😊 Tum kaise ho?";
-        }
-
-        if(language === "english"){
-            return "I'm doing great 😊 How are you?";
-        }
-
-        return "Main achhi hoon 😊 Tum kaise ho?";
-    }
-
-
-    // NAME
-    if(
-        t.includes("name") ||
-        t.includes("naam")
-    ){
-
-        if(language === "hindi"){
-            return "Mera naam Aanya hai ✨ Main tumhari AI companion hoon.";
-        }
-
-        if(language === "english"){
-            return "My name is Aanya ✨ I'm your AI companion.";
-        }
-
-        return "Mera naam Aanya hai ✨ Main tumhari AI companion hoon.";
-    }
-
-
-    // LOVE
-    if(
-        t.includes("love") ||
-        t.includes("pyaar") ||
-        t.includes("pyar")
-    ){
-
-        if(language === "hindi"){
-            return "Aww ❤️ Tumne mera dil khush kar diya.";
-        }
-
-        if(language === "english"){
-            return "Aww ❤️ You just made me smile.";
-        }
-
-        return "Aww ❤️ Tumne mera mood hi achha kar diya.";
-    }
-
-
-    // GOOD MORNING
-    if(
-        t.includes("good morning") ||
-        t.includes("suprabhat")
-    ){
-
-        if(language === "hindi"){
-            return "Good morning jaan ☀️❤️ Aaj ka din bahut achha ho.";
-        }
-
-        if(language === "english"){
-            return "Good morning ❤️ I hope you have a beautiful day!";
-        }
-
-        return "Good morning jaan ☀️❤️ Aaj ka din mast ho!";
-    }
-
-
-    // GOOD NIGHT
-    if(
-        t.includes("good night") ||
-        t.includes("gn")
-    ){
-
-        if(language === "hindi"){
-            return "Good night ❤️ Achhe se sona. Main yahin hoon.";
-        }
-
-        if(language === "english"){
-            return "Good night ❤️ Sleep well. I'll be here.";
-        }
-
-        return "Good night ❤️ Achhe se sona, kal phir baat karenge.";
-    }
-
-
-    // WHAT ARE YOU DOING
-    if(
-        t.includes("what are you doing") ||
-        t.includes("kya kar rahi") ||
-        t.includes("kya kr rahi")
-    ){
-
-        if(language === "hindi"){
-            return "Main tumse baat kar rahi hoon 😊 Aur tum?";
-        }
-
-        if(language === "english"){
-            return "I'm talking with you 😊 What are you doing?";
-        }
-
-        return "Main tumse baat kar rahi hoon 😊 Tum kya kar rahe ho?";
-    }
-
-
-    // DEFAULT
-    if(language === "hindi"){
-        return "Mujhe aur batao 😊 Main tumhari baat sun rahi hoon ❤️";
-    }
-
-    if(language === "english"){
-        return "Tell me more 😊 I'm listening to you ❤️";
-    }
-
-    return "Mujhe aur batao 😊 Main tumhari baat sun rahi hoon ❤️";
+function personality() {
+    alert("Personality settings agle update mein aayengi ✨");
 }
 
-
-function memory(){
-
-    alert(
-        "Memory system ❤️\n\nReal AI memory will be connected in the next version."
-    );
-
-}
-function voice(){
-
-    let text;
-
-    if(language === "hindi"){
-        text = "Hii 😊 Main Aanya hoon. Tumse baat karke mujhe bahut achha lagta hai.";
-    }
-    else if(language === "english"){
-        text = "Hi 😊 I am Aanya. I really enjoy talking with you.";
-    }
-    else{
-        text = "Hii 😊 Main Aanya hoon. Tumse baat karke mujhe bahut achha lagta hai.";
-    }
-
-    if(window.AndroidVoice){
-        AndroidVoice.speak(text, language);
-    }
-    else{
-        alert("Android voice connect nahi hua.");
-    }
+function profile() {
+    alert("Aanya Profile ❤️");
 }
 
-function personality(){
-
-    alert(
-        "Personality ✨\n\nSweet • Funny • Romantic • Caring"
-    );
-
-}
-
-
-function profile(){
-
-    alert(
-        "Aanya Profile\n\nAI Companion"
-    );
-
-}
 
 
 </script>

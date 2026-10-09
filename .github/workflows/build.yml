@@ -30,19 +30,21 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.AIGF_KEYSTORE_BASE64 }}
         run: |
+          test -n "$KEYSTORE_BASE64"
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/aigf-signing.jks"
           test -s "$RUNNER_TEMP/aigf-signing.jks"
 
       - name: Build Signed APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          AIGF_KEYSTORE_PATH: ${{ runner.temp }}/aigf-signing.jks
         run: |
           sed -i "s/versionCode = [0-9]*/versionCode = ${{ github.run_number }}/" app/build.gradle.kts
-          gradle assembleDebug \
-            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/aigf-signing.jks" \
-            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias=aigf \
-            -Pandroid.injected.signing.key.password="$KEYSTORE_PASSWORD"
+          gradle assembleDebug
+
+      - name: Verify APK Signature
+        run: |
+          $ANDROID_HOME/build-tools/35.0.0/apksigner verify --print-certs app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

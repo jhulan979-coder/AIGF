@@ -595,7 +595,77 @@ onclick="sendMessage()"
 
 
 
-<!-- VIDEO CALL -->
+
+    
+<!-- SETTINGS -->
+
+<section id="settings" class="screen">
+
+<header>
+    <button class="back" onclick="openScreen('home')">‹</button>
+    <div>
+        <b>Settings ⚙️</b>
+        <br>
+        <small style="color:#999">Configure Aanya's AI</small>
+    </div>
+</header>
+
+<div style="padding:18px">
+
+    <div class="card">
+        <h3>Gemini API Key 🔑</h3>
+
+        <p style="color:#aaa;font-size:13px;line-height:1.5">
+            Apni Google Gemini API key yahan paste karo.
+            Key sirf is phone par save hogi.
+        </p>
+
+        <input
+            id="apiKey"
+            type="password"
+            placeholder="Paste API key here"
+            autocomplete="off"
+            style="width:100%;background:#191a25;border:1px solid #303141;color:white;border-radius:12px;padding:14px;margin:8px 0"
+        >
+
+        <button
+            onclick="toggleKeyVisibility()"
+            style="background:#292a38;color:white;border:0;border-radius:10px;padding:10px;margin:5px 0">
+            👁 Show / Hide Key
+        </button>
+
+        <button
+            onclick="saveApiKey()"
+            style="display:block;width:100%;background:#ff4fa3;color:white;border:0;border-radius:12px;padding:14px;margin-top:12px">
+            Save API Key
+        </button>
+
+        <button
+            onclick="testConnection()"
+            style="display:block;width:100%;background:#292a38;color:white;border:1px solid #414257;border-radius:12px;padding:14px;margin-top:10px">
+            Test Connection
+        </button>
+
+        <button
+            onclick="deleteApiKey()"
+            style="display:block;width:100%;background:#39202b;color:#ff9cba;border:0;border-radius:12px;padding:12px;margin-top:10px">
+            Delete Saved Key
+        </button>
+
+        <p id="keyStatus" style="font-size:13px;color:#aaa;overflow-wrap:anywhere">
+            API key abhi check nahi hui.
+        </p>
+    </div>
+
+    <p style="color:#999;font-size:12px;line-height:1.5">
+        Note: API key ko kisi ke saath share mat karna.
+        Google AI Studio mein key bana sakte ho.
+    </p>
+
+</div>
+
+</section>
+    <!-- VIDEO CALL -->
 
 <section id="call" class="screen call">
 

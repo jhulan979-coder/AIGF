@@ -20,6 +20,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private lateinit var webView: WebView
     private lateinit var tts: TextToSpeech
+    private var elevenPlayer: MediaPlayer? = null
 
     private val prefs by lazy {
         getSharedPreferences("aigf_settings", MODE_PRIVATE)
@@ -76,6 +77,29 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         @JavascriptInterface
         fun deleteKey() {
             prefs.edit().remove("gemini_key").apply()
+            @JavascriptInterface
+ fun saveElevenLabsKey(key: String): Boolean {
+    val cleaned = key.trim()
+    if (cleaned.isEmpty()) return false
+    return prefs.edit().putString("elevenlabs_key", cleaned).commit()
+}
+
+@JavascriptInterface
+fun getElevenLabsKey(): String {
+    return prefs.getString("elevenlabs_key", "") ?: ""
+}
+
+@JavascriptInterface
+fun saveElevenLabsVoiceId(voiceId: String): Boolean {
+    val cleaned = voiceId.trim()
+    if (cleaned.isEmpty()) return false
+    return prefs.edit().putString("elevenlabs_voice_id", cleaned).commit()
+}
+
+@JavascriptInterface
+fun getElevenLabsVoiceId(): String {
+    return prefs.getString("elevenlabs_voice_id", "") ?: ""
+}
         }
     }
 
@@ -258,6 +282,90 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     inner class VoiceBridge {
         @JavascriptInterface
         fun speak(text: String, language: String) {
+            @JavascriptInterface
+fun speakElevenLabs(text: String) {
+    thread {
+        var connection: HttpURLConnection? = null
+        var tempFile: java.io.File? = null
+
+        try {
+            val apiKey = prefs.getString("elevenlabs_key", "") ?: ""
+            val voiceId = prefs.getString("elevenlabs_voice_id", "") ?: ""
+
+            if (apiKey.isBlank() || voiceId.isBlank()) {
+                return@thread
+            }
+
+            val url = URL(
+                "https://api.elevenlabs.io/v1/text-to-speech/$voiceId"
+            )
+
+            connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.connectTimeout = 20000
+            connection.readTimeout = 60000
+            connection.setRequestProperty("xi-api-key", apiKey)
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Accept", "audio/mpeg")
+            connection.doOutput = true
+
+            val body = JSONObject().apply {
+                put("text", text)
+                put("model_id", "eleven_multilingual_v2")
+                put("voice_settings", JSONObject().apply {
+                    put("stability", 0.45)
+                    put("similarity_boost", 0.8)
+                })
+            }
+
+            connection.outputStream.use {
+                it.write(body.toString().toByteArray(Charsets.UTF_8))
+            }
+
+            if (connection.responseCode !in 200..299) {
+                return@thread
+            }
+
+            tempFile = java.io.File.createTempFile(
+                "aanya_voice_", ".mp3", cacheDir
+            )
+
+            connection.inputStream.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            runOnUiThread {
+                try {
+                    elevenPlayer?.release()
+                    elevenPlayer = MediaPlayer().apply {
+                        setDataSource(tempFile!!.absolutePath)
+                        setOnCompletionListener { player ->
+                            player.release()
+                            if (elevenPlayer === player) elevenPlayer = null
+                            tempFile?.delete()
+                        }
+                        setOnErrorListener { player, _, _ ->
+                            player.release()
+                            if (elevenPlayer === player) elevenPlayer = null
+                            tempFile?.delete()
+                            true
+                        }
+                        prepareAsync()
+                        setOnPreparedListener { player -> player.start() }
+                    }
+                } catch (_: Exception) {
+                    tempFile?.delete()
+                }
+            }
+        } catch (_: Exception) {
+            tempFile?.delete()
+        } finally {
+            connection?.disconnect()
+        }
+    }
+}
             runOnUiThread {
                 tts.language = if (language == "english") {
                     Locale.US

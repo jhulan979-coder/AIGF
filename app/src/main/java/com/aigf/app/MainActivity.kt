@@ -34,7 +34,6 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.mediaPlaybackRequiresUserGesture = false
-
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = WebChromeClient()
 
@@ -61,15 +60,13 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     inner class SettingsBridge {
         @JavascriptInterface
-        fun getKey(): String {
-            return prefs.getString("gemini_key", "") ?: ""
-        }
+        fun getKey(): String =
+            prefs.getString("gemini_key", "") ?: ""
 
         @JavascriptInterface
         fun saveKey(key: String): Boolean {
             val cleaned = key.trim()
             if (cleaned.isEmpty()) return false
-
             return prefs.edit()
                 .putString("gemini_key", cleaned)
                 .commit()
@@ -82,95 +79,167 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     inner class AIBridge {
+
         @JavascriptInterface
         fun askGemini(message: String, language: String) {
             thread {
-                var connection: HttpURLConnection? = null
+                val apiKey =
+                    prefs.getString("gemini_key", "") ?: ""
+
+                if (apiKey.isBlank()) {
+                    sendToWeb("API key missing hai. Settings mein save karo.")
+                    return@thread
+                }
+
+                val languageInstruction = when (language) {
+                    "hindi" -> "Reply in natural Hindi."
+                    "english" -> "Reply in natural English."
+                    else -> "Reply naturally in Hinglish."
+                }
+
+                val prompt = """
+                    You are Aanya, a friendly and caring AI companion.
+                    Be warm, natural, slightly playful and conversational.
+                    $languageInstruction
+                    Keep replies reasonably short.
+                    User says: $message
+                """.trimIndent()
+
+                val models = listOf(
+                    "gemini-3.8-flash",
+                    "gemini-3.5-flash-lite"
+                )
+
+                var finalError = "Gemini abhi available nahi hai."
 
                 try {
-                    val apiKey = prefs.getString("gemini_key", "") ?: ""
+                    for (model in models) {
+                        for (attempt in 0..2) {
+                            val result = try {
+                                requestModel(apiKey, model, prompt)
+                            } catch (e: Exception) {
+                                Pair(503, "")
+                            }
 
-                    if (apiKey.isBlank()) {
-                        sendToWeb("API key missing hai. Pehle Settings mein apni Gemini API key save karo.")
-                        return@thread
+                            val code = result.first
+                            val body = result.second
+
+                            if (code in 200..299) {
+                                try {
+                                    val json = JSONObject(body)
+                                    val reply = json
+                                        .getJSONArray("candidates")
+                                        .getJSONObject(0)
+                                        .getJSONObject("content")
+                                        .getJSONArray("parts")
+                                        .getJSONObject(0)
+                                        .getString("text")
+
+                                    sendToWeb(reply)
+                                    return@thread
+                                } catch (e: Exception) {
+                                    finalError =
+                                        "Gemini ka response samajh nahi aaya."
+                                    break
+                                }
+                            }
+
+                            finalError = "Gemini error ($code): $body"
+
+                            // Retry temporary server/load errors.
+                            if (code == 429 || code in 500..599) {
+                                if (attempt < 2) {
+                                    Thread.sleep(
+                                        1000L * (1L shl attempt)
+                                    )
+                                    continue
+                                }
+                                break
+                            }
+
+                            // Try backup model if primary is unavailable.
+                            if (code == 404) break
+
+                            // Other errors usually need a key/request fix.
+                            sendToWeb(finalError)
+                            return@thread
+                        }
                     }
 
-                    val url = URL(
-                        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+                    sendToWeb(
+                        "Dono Gemini models se jawab nahi mila. " +
+                        "Thodi der baad try karo. $finalError"
                     )
+                } catch (e: Exception) {
+                    sendToWeb(
+                        "Connection mein problem hui. Internet check karke dobara try karo."
+                    )
+                }
+            }
+        }
 
-                    connection = url.openConnection() as HttpURLConnection
-                    connection.requestMethod = "POST"
-                    connection.connectTimeout = 20000
-                    connection.readTimeout = 30000
-                    connection.setRequestProperty("Content-Type", "application/json")
-                    connection.setRequestProperty("x-goog-api-key", apiKey)
-                    connection.doOutput = true
+        private fun requestModel(
+            apiKey: String,
+            model: String,
+            prompt: String
+        ): Pair<Int, String> {
+            var connection: HttpURLConnection? = null
 
-                    val languageInstruction = when (language) {
-                        "hindi" -> "Reply in natural Hindi."
-                        "english" -> "Reply in natural English."
-                        else -> "Reply naturally in Hinglish."
-                    }
+            try {
+                val url = URL(
+                    "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent"
+                )
 
-                    val prompt = """
-                        You are Aanya, a sweet, caring and friendly AI companion.
-                        Be warm, natural, slightly playful and conversational.
-                        $languageInstruction
-                        Keep replies reasonably short.
-                        User says: $message
-                    """.trimIndent()
+                connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.connectTimeout = 20000
+                connection.readTimeout = 30000
+                connection.setRequestProperty(
+                    "Content-Type", "application/json"
+                )
+                connection.setRequestProperty(
+                    "x-goog-api-key", apiKey
+                )
+                connection.doOutput = true
 
-                    val body = JSONObject().apply {
-                        put("contents", org.json.JSONArray().put(
+                val body = JSONObject().apply {
+                    put(
+                        "contents",
+                        org.json.JSONArray().put(
                             JSONObject().put(
                                 "parts",
                                 org.json.JSONArray().put(
                                     JSONObject().put("text", prompt)
                                 )
                             )
-                        ))
-                        put("generationConfig", JSONObject().apply {
-                            put("temperature", 0.9)
+                        )
+                    )
+                    put(
+                        "generationConfig",
+                        JSONObject().apply {
+                            put("temperature", 0.8)
                             put("maxOutputTokens", 500)
-                        })
-                    }
-
-                    connection.outputStream.use {
-                        it.write(body.toString().toByteArray(Charsets.UTF_8))
-                    }
-
-                    val code = connection.responseCode
-                    val stream = if (code in 200..299) {
-                        connection.inputStream
-                    } else {
-                        connection.errorStream
-                    }
-
-                    val response = stream?.bufferedReader()?.use {
-                        it.readText()
-                    } ?: ""
-
-                    if (code !in 200..299) {
-                        sendToWeb("Gemini error ($code): $response")
-                        return@thread
-                    }
-
-                    val reply = JSONObject(response)
-                        .getJSONArray("candidates")
-                        .getJSONObject(0)
-                        .getJSONObject("content")
-                        .getJSONArray("parts")
-                        .getJSONObject(0)
-                        .getString("text")
-
-                    sendToWeb(reply)
-
-                } catch (e: Exception) {
-                    sendToWeb("Connection nahi ho paya. Internet aur API key check karo.")
-                } finally {
-                    connection?.disconnect()
+                        }
+                    )
                 }
+
+                connection.outputStream.use {
+                    it.write(body.toString().toByteArray(Charsets.UTF_8))
+                }
+
+                val code = connection.responseCode
+                val stream = if (code in 200..299) {
+                    connection.inputStream
+                } else {
+                    connection.errorStream
+                }
+
+                val response = stream?.bufferedReader()
+                    ?.use { it.readText() } ?: ""
+
+                return Pair(code, response)
+            } finally {
+                connection?.disconnect()
             }
         }
 
@@ -194,6 +263,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 } else {
                     Locale("hi", "IN")
                 }
+
                 tts.setSpeechRate(0.95f)
                 tts.setPitch(1.05f)
                 tts.speak(

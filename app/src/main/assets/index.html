@@ -660,6 +660,15 @@ onclick="sendMessage()"
     <p style="color:#999;font-size:12px;line-height:1.5">
         Note: API key ko kisi ke saath share mat karna.
         Google AI Studio mein key bana sakte ho.
+        <h3>🎙️ Aanya Natural Voice</h3><label for="elevenKey">ElevenLabs API Key</label>
+<input id="elevenKey" type="password" placeholder="Apni ElevenLabs API key paste karo">
+
+<label for="elevenVoiceId">ElevenLabs Voice ID</label>
+<input id="elevenVoiceId" type="text" placeholder="Apna copied Voice ID paste karo">
+
+<button onclick="saveElevenSettings()">Save Voice Settings</button>
+
+<p id="elevenStatus">Voice settings abhi save nahi hui hain.</p>
     </p>
 
 </div>
@@ -952,7 +961,31 @@ function profile() {
 }
 
 
+function saveElevenSettings() {
+    const key = document.getElementById("elevenKey").value.trim();
+    const voiceId = document.getElementById("elevenVoiceId").value.trim();
+    const status = document.getElementById("elevenStatus");
 
+    if (!key || !voiceId) {
+        status.textContent = "API Key aur Voice ID dono bharo.";
+        return;
+    }
+
+    try {
+        const keySaved = AndroidSettings.saveElevenLabsKey(key);
+        const voiceSaved = AndroidSettings.saveElevenLabsVoiceId(voiceId);
+
+        if (keySaved && voiceSaved) {
+            status.textContent = "ElevenLabs settings phone mein save ho gayi!";
+            document.getElementById("elevenKey").value = "";
+        } else {
+            status.textContent = "Save nahi hua. Dobara try karo.";
+        }
+    } catch (e) {
+        status.textContent = "Settings save nahi hui. APK update karna pad sakta hai.";
+    }
+}
+    
 </script>
 
 </body>

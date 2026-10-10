@@ -368,15 +368,25 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                         )
                     }
 
-                    if (connection.responseCode !in 200..299) {
-                    val errorCode = connection.responseCode
-                     android.util.Log.e(
-                   "AanyaVoice",
-                   "ElevenLabs request failed: HTTP $errorCode"
-                    )
-                     return@thread
-                     }
                     
+                 val responseCode = connection.responseCode
+
+    if (responseCode !in 200..299) {
+      android.util.Log.e(
+        "AanyaVoice",
+        "ElevenLabs request failed: HTTP $responseCode"
+      )
+
+    runOnUiThread {
+        android.widget.Toast.makeText(
+            this@MainActivity,
+            "ElevenLabs error: HTTP $responseCode",
+            android.widget.Toast.LENGTH_LONG
+        ).show()
+    }
+
+    return@thread
+ }   
 
 
                     val file = File.createTempFile(

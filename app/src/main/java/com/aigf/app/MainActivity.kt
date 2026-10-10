@@ -369,8 +369,15 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     }
 
                     if (connection.responseCode !in 200..299) {
-                        return@thread
-                    }
+                    val errorCode = connection.responseCode
+                     android.util.Log.e(
+                   "AanyaVoice",
+                   "ElevenLabs request failed: HTTP $errorCode"
+                    )
+                     return@thread
+                     }
+                    
+
 
                     val file = File.createTempFile(
                         "aanya_voice_", ".mp3", cacheDir

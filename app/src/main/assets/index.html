@@ -928,7 +928,7 @@ window.receiveGeminiReply = function(reply) {
     try {
         if (window.AndroidVoice) {
             const lang = localStorage.getItem('aanyaLanguage') || 'hinglish';
-        AndroidVoice.speakElevenLabs(reply); 
+         AndroidVoice.speak(reply, lang);
         }
     } catch (e) {}
 };

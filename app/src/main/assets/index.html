@@ -929,7 +929,7 @@ window.receiveGeminiReply = function(reply) {
     try {
         if (window.AndroidVoice) {
             const lang = localStorage.getItem('aanyaLanguage') || 'hinglish';
-            AndroidVoice.speakElevenLabs(reply);, lang === 'english' ? 'english' : 'hindi');
+        AndroidVoice.speakElevenLabs(reply); 
         }
     } catch (e) {}
 };

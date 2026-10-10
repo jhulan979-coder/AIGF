@@ -11,6 +11,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
@@ -54,13 +55,23 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     override fun onDestroy() {
-        tts.stop()
-        tts.shutdown()
-        webView.destroy()
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
+        }
+
+        elevenPlayer?.release()
+        elevenPlayer = null
+
+        if (::webView.isInitialized) {
+            webView.destroy()
+        }
+
         super.onDestroy()
     }
 
     inner class SettingsBridge {
+
         @JavascriptInterface
         fun getKey(): String =
             prefs.getString("gemini_key", "") ?: ""
@@ -69,6 +80,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         fun saveKey(key: String): Boolean {
             val cleaned = key.trim()
             if (cleaned.isEmpty()) return false
+
             return prefs.edit()
                 .putString("gemini_key", cleaned)
                 .commit()
@@ -78,30 +90,34 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         fun deleteKey() {
             prefs.edit().remove("gemini_key").apply()
         }
-         @JavascriptInterface
- fun saveElevenLabsKey(key: String): Boolean {
-    val cleaned = key.trim()
-    if (cleaned.isEmpty()) return false
-    return prefs.edit().putString("elevenlabs_key", cleaned).commit()
-}
 
-@JavascriptInterface
-fun getElevenLabsKey(): String {
-    return prefs.getString("elevenlabs_key", "") ?: ""
-}
+        @JavascriptInterface
+        fun saveElevenLabsKey(key: String): Boolean {
+            val cleaned = key.trim()
+            if (cleaned.isEmpty()) return false
 
-@JavascriptInterface
-fun saveElevenLabsVoiceId(voiceId: String): Boolean {
-    val cleaned = voiceId.trim()
-    if (cleaned.isEmpty()) return false
-    return prefs.edit().putString("elevenlabs_voice_id", cleaned).commit()
-}
-
-@JavascriptInterface
-fun getElevenLabsVoiceId(): String {
-    return prefs.getString("elevenlabs_voice_id", "") ?: ""
-}
+            return prefs.edit()
+                .putString("elevenlabs_key", cleaned)
+                .commit()
         }
+
+        @JavascriptInterface
+        fun getElevenLabsKey(): String =
+            prefs.getString("elevenlabs_key", "") ?: ""
+
+        @JavascriptInterface
+        fun saveElevenLabsVoiceId(voiceId: String): Boolean {
+            val cleaned = voiceId.trim()
+            if (cleaned.isEmpty()) return false
+
+            return prefs.edit()
+                .putString("elevenlabs_voice_id", cleaned)
+                .commit()
+        }
+
+        @JavascriptInterface
+        fun getElevenLabsVoiceId(): String =
+            prefs.getString("elevenlabs_voice_id", "") ?: ""
     }
 
     inner class AIBridge {
@@ -172,7 +188,6 @@ fun getElevenLabsVoiceId(): String {
 
                             finalError = "Gemini error ($code): $body"
 
-                            // Retry temporary server/load errors.
                             if (code == 429 || code in 500..599) {
                                 if (attempt < 2) {
                                     Thread.sleep(
@@ -183,10 +198,8 @@ fun getElevenLabsVoiceId(): String {
                                 break
                             }
 
-                            // Try backup model if primary is unavailable.
                             if (code == 404) break
 
-                            // Other errors usually need a key/request fix.
                             sendToWeb(finalError)
                             return@thread
                         }
@@ -194,7 +207,7 @@ fun getElevenLabsVoiceId(): String {
 
                     sendToWeb(
                         "Dono Gemini models se jawab nahi mila. " +
-                        "Thodi der baad try karo. $finalError"
+                            "Thodi der baad try karo. $finalError"
                     )
                 } catch (e: Exception) {
                     sendToWeb(
@@ -220,6 +233,7 @@ fun getElevenLabsVoiceId(): String {
                 connection.requestMethod = "POST"
                 connection.connectTimeout = 20000
                 connection.readTimeout = 30000
+
                 connection.setRequestProperty(
                     "Content-Type", "application/json"
                 )
@@ -271,6 +285,7 @@ fun getElevenLabsVoiceId(): String {
 
         private fun sendToWeb(reply: String) {
             val safe = JSONObject.quote(reply)
+
             runOnUiThread {
                 webView.evaluateJavascript(
                     "window.receiveGeminiReply($safe);",
@@ -281,92 +296,9 @@ fun getElevenLabsVoiceId(): String {
     }
 
     inner class VoiceBridge {
+
         @JavascriptInterface
         fun speak(text: String, language: String) {
-            @JavascriptInterface
-fun speakElevenLabs(text: String) {
-    thread {
-        var connection: HttpURLConnection? = null
-        var tempFile: java.io.File? = null
-
-        try {
-            val apiKey = prefs.getString("elevenlabs_key", "") ?: ""
-            val voiceId = prefs.getString("elevenlabs_voice_id", "") ?: ""
-
-            if (apiKey.isBlank() || voiceId.isBlank()) {
-                return@thread
-            }
-
-            val url = URL(
-                "https://api.elevenlabs.io/v1/text-to-speech/$voiceId"
-            )
-
-            connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "POST"
-            connection.connectTimeout = 20000
-            connection.readTimeout = 60000
-            connection.setRequestProperty("xi-api-key", apiKey)
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("Accept", "audio/mpeg")
-            connection.doOutput = true
-
-            val body = JSONObject().apply {
-                put("text", text)
-                put("model_id", "eleven_multilingual_v2")
-                put("voice_settings", JSONObject().apply {
-                    put("stability", 0.45)
-                    put("similarity_boost", 0.8)
-                })
-            }
-
-            connection.outputStream.use {
-                it.write(body.toString().toByteArray(Charsets.UTF_8))
-            }
-
-            if (connection.responseCode !in 200..299) {
-                return@thread
-            }
-
-            tempFile = java.io.File.createTempFile(
-                "aanya_voice_", ".mp3", cacheDir
-            )
-
-            connection.inputStream.use { input ->
-                tempFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-
-            runOnUiThread {
-                try {
-                    elevenPlayer?.release()
-                    elevenPlayer = MediaPlayer().apply {
-                        setDataSource(tempFile!!.absolutePath)
-                        setOnCompletionListener { player ->
-                            player.release()
-                            if (elevenPlayer === player) elevenPlayer = null
-                            tempFile?.delete()
-                        }
-                        setOnErrorListener { player, _, _ ->
-                            player.release()
-                            if (elevenPlayer === player) elevenPlayer = null
-                            tempFile?.delete()
-                            true
-                        }
-                        prepareAsync()
-                        setOnPreparedListener { player -> player.start() }
-                    }
-                } catch (_: Exception) {
-                    tempFile?.delete()
-                }
-            }
-        } catch (_: Exception) {
-            tempFile?.delete()
-        } finally {
-            connection?.disconnect()
-        }
-    }
-}
             runOnUiThread {
                 tts.language = if (language == "english") {
                     Locale.US
@@ -376,12 +308,140 @@ fun speakElevenLabs(text: String) {
 
                 tts.setSpeechRate(0.95f)
                 tts.setPitch(1.05f)
+
                 tts.speak(
                     text,
                     TextToSpeech.QUEUE_FLUSH,
                     null,
                     "AANYA_VOICE"
                 )
+            }
+        }
+
+        @JavascriptInterface
+        fun speakElevenLabs(text: String) {
+            thread {
+                var connection: HttpURLConnection? = null
+                var audioFile: File? = null
+
+                try {
+                    val apiKey =
+                        prefs.getString("elevenlabs_key", "") ?: ""
+                    val voiceId =
+                        prefs.getString("elevenlabs_voice_id", "") ?: ""
+
+                    if (apiKey.isBlank() || voiceId.isBlank()) {
+                        return@thread
+                    }
+
+                    val url = URL(
+                        "https://api.elevenlabs.io/v1/text-to-speech/$voiceId"
+                    )
+
+                    connection =
+                        url.openConnection() as HttpURLConnection
+
+                    connection.requestMethod = "POST"
+                    connection.connectTimeout = 20000
+                    connection.readTimeout = 60000
+                    connection.setRequestProperty("xi-api-key", apiKey)
+                    connection.setRequestProperty(
+                        "Content-Type", "application/json"
+                    )
+                    connection.setRequestProperty(
+                        "Accept", "audio/mpeg"
+                    )
+                    connection.doOutput = true
+
+                    val body = JSONObject().apply {
+                        put("text", text)
+                        put("model_id", "eleven_multilingual_v2")
+                        put("voice_settings", JSONObject().apply {
+                            put("stability", 0.45)
+                            put("similarity_boost", 0.8)
+                        })
+                    }
+
+                    connection.outputStream.use {
+                        it.write(
+                            body.toString().toByteArray(Charsets.UTF_8)
+                        )
+                    }
+
+                    if (connection.responseCode !in 200..299) {
+                        return@thread
+                    }
+
+                    val file = File.createTempFile(
+                        "aanya_voice_", ".mp3", cacheDir
+                    )
+                    audioFile = file
+
+                    connection.inputStream.use { input ->
+                        file.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    runOnUiThread {
+                        var player: MediaPlayer? = null
+
+                        try {
+                            elevenPlayer?.release()
+                            elevenPlayer = null
+
+                            player = MediaPlayer()
+                            val currentPlayer = player!!
+
+                            elevenPlayer = currentPlayer
+
+                            currentPlayer.setOnPreparedListener {
+                                it.start()
+                            }
+
+                            currentPlayer.setOnCompletionListener {
+                                it.release()
+
+                                if (elevenPlayer === it) {
+                                    elevenPlayer = null
+                                }
+
+                                file.delete()
+                            }
+
+                            currentPlayer.setOnErrorListener {
+                                    mediaPlayer, _, _ ->
+                                mediaPlayer.release()
+
+                                if (elevenPlayer === mediaPlayer) {
+                                    elevenPlayer = null
+                                }
+
+                                file.delete()
+                                true
+                            }
+
+                            currentPlayer.setDataSource(file.absolutePath)
+                            currentPlayer.prepareAsync()
+
+                        } catch (e: Exception) {
+                            player?.release()
+
+                            if (elevenPlayer === player) {
+                                elevenPlayer = null
+                            }
+
+                            file.delete()
+                        }
+                    }
+
+                    audioFile = null
+
+                } catch (e: Exception) {
+                    audioFile?.delete()
+                } finally {
+                    connection?.disconnect()
+                }
             }
         }
     }

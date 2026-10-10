@@ -77,7 +77,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         @JavascriptInterface
         fun deleteKey() {
             prefs.edit().remove("gemini_key").apply()
-            @JavascriptInterface
+        }
+         @JavascriptInterface
  fun saveElevenLabsKey(key: String): Boolean {
     val cleaned = key.trim()
     if (cleaned.isEmpty()) return false

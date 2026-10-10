@@ -16,7 +16,23 @@ user-scalable=no">
 *{
     box-sizing:border-box;
 }
+.aanyaFace {
+    transform-origin: center center;
+    transition: transform 0.12s ease;
+}
 
+.aanyaFace.talking {
+    animation: aanyaTalking 0.22s infinite alternate;
+}
+
+@keyframes aanyaTalking {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.012);
+    }
+}
 body{
     margin:0;
     background:#07080d;
@@ -679,6 +695,7 @@ onclick="sendMessage()"
 
 
 <img
+class="aanyaFace"
 src="file_00000000b23881f483a575a047b700a9.png"
 >
 

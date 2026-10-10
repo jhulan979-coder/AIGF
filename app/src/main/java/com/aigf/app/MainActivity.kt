@@ -306,8 +306,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     Locale("hi", "IN")
                 }
 
-                tts.setSpeechRate(0.95f)
-                tts.setPitch(1.05f)
+                tts.setSpeechRate(0.88f)
+                tts.setPitch(1.0f)
 
                 tts.speak(
                     text,
